@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Pairing Converter</title>
+  <meta name="description" content="Convert Atlas pairing PDFs (LCL + UTC) into a LogTen Pro CSV and a calendar file.">
+  <meta name="theme-color" content="#0f1720" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pairings">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">Pairing Converter</p>
+      <h1>Two PDFs in.<br>LogTen and Calendar out.</h1>
+      <p class="lede">Pick the <b>LCL</b> and <b>UTC</b> versions of the same pairing. Nothing leaves your phone.</p>
+    </header>
+
+    <section class="pick" aria-label="Input files">
+      <label class="pick-all">
+        <input id="pickAll" type="file" accept="application/pdf,.pdf" multiple>
+        <span>Choose both PDFs</span>
+      </label>
+
+      <div class="slots">
+        <label class="slot" data-kind="LCL">
+          <input type="file" accept="application/pdf,.pdf" data-slot="LCL">
+          <span class="tag">LCL</span>
+          <span class="name" id="nameLCL">Local-time pairing</span>
+          <span class="state" id="stateLCL">—</span>
+        </label>
+        <label class="slot" data-kind="UTC">
+          <input type="file" accept="application/pdf,.pdf" data-slot="UTC">
+          <span class="tag">UTC</span>
+          <span class="name" id="nameUTC">UTC pairing</span>
+          <span class="state" id="stateUTC">—</span>
+        </label>
+      </div>
+      <button id="swap" class="link" type="button" hidden>Swap LCL ↔ UTC</button>
+    </section>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <section id="result" hidden aria-label="Result">
+      <div class="result-head">
+        <h2 id="summary"></h2>
+        <p class="note">Times below are UTC, as they'll go into LogTen.</p>
+      </div>
+
+      <div class="legs" id="legs"></div>
+
+      <div class="actions">
+        <div class="action">
+          <div>
+            <p class="action-title">Calendar</p>
+            <p class="action-file" id="icsName"></p>
+          </div>
+          <div class="btns">
+            <button class="primary" id="shareIcs" type="button">Add to Calendar</button>
+            <button class="ghost" id="dlIcs" type="button">Download</button>
+          </div>
+        </div>
+        <div class="action">
+          <div>
+            <p class="action-title">LogTen Pro</p>
+            <p class="action-file" id="csvName"></p>
+          </div>
+          <div class="btns">
+            <button class="primary" id="shareCsv" type="button">Share CSV</button>
+            <button class="ghost" id="dlCsv" type="button">Download</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Flights without an airline prefix are treated as Atlas Air (5Y). Deadheads are marked “*” in Calendar and as Positioning in LogTen.</p>
+    </footer>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
