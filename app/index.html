@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Pairing Converter</title>
-  <meta name="description" content="Convert Atlas pairing PDFs (LCL + UTC) into a LogTen Pro CSV and a calendar file.">
+  <meta name="description" content="Convert Atlas pairing PDFs (LCL + UTC) into a LogTen Pro CSV and a calendar file, and airline booking emails into calendar events.">
   <meta name="theme-color" content="#0f1720" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f4f1ea" media="(prefers-color-scheme: light)">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -20,70 +20,142 @@
   <main>
     <header>
       <p class="eyebrow">Pairing Converter</p>
-      <h1>Two PDFs in.<br>LogTen and Calendar out.</h1>
-      <p class="lede">Pick the <b>LCL</b> and <b>UTC</b> versions of the same pairing. Nothing leaves your phone.</p>
+      <div class="modes" role="tablist" aria-label="What to convert">
+        <button type="button" role="tab" id="tabPairing" aria-controls="modePairing" aria-selected="true">Pairing PDFs</button>
+        <button type="button" role="tab" id="tabEmail" aria-controls="modeEmail" aria-selected="false">Booking email</button>
+      </div>
     </header>
 
-    <section class="pick" aria-label="Input files">
-      <label class="pick-all">
-        <input id="pickAll" type="file" accept="application/pdf,.pdf" multiple>
-        <span>Choose both PDFs</span>
-      </label>
+    <!-- ============================================================ pairing PDFs -->
+    <div id="modePairing" role="tabpanel" aria-labelledby="tabPairing">
+      <h1>Two PDFs in.<br>LogTen and Calendar out.</h1>
+      <p class="lede">Pick the <b>LCL</b> and <b>UTC</b> versions of the same pairing. Nothing leaves your phone.</p>
 
-      <div class="slots">
-        <label class="slot" data-kind="LCL">
-          <input type="file" accept="application/pdf,.pdf" data-slot="LCL">
-          <span class="tag">LCL</span>
-          <span class="name" id="nameLCL">Local-time pairing</span>
-          <span class="state" id="stateLCL">—</span>
+      <section class="pick" aria-label="Input files">
+        <label class="pick-all">
+          <input id="pickAll" type="file" accept="application/pdf,.pdf" multiple>
+          <span>Choose both PDFs</span>
         </label>
-        <label class="slot" data-kind="UTC">
-          <input type="file" accept="application/pdf,.pdf" data-slot="UTC">
-          <span class="tag">UTC</span>
-          <span class="name" id="nameUTC">UTC pairing</span>
-          <span class="state" id="stateUTC">—</span>
-        </label>
-      </div>
-      <button id="swap" class="link" type="button" hidden>Swap LCL ↔ UTC</button>
-    </section>
 
-    <p id="error" class="error" role="alert" hidden></p>
+        <div class="slots">
+          <label class="slot" data-kind="LCL">
+            <input type="file" accept="application/pdf,.pdf" data-slot="LCL">
+            <span class="tag">LCL</span>
+            <span class="name" id="nameLCL">Local-time pairing</span>
+            <span class="state" id="stateLCL">—</span>
+          </label>
+          <label class="slot" data-kind="UTC">
+            <input type="file" accept="application/pdf,.pdf" data-slot="UTC">
+            <span class="tag">UTC</span>
+            <span class="name" id="nameUTC">UTC pairing</span>
+            <span class="state" id="stateUTC">—</span>
+          </label>
+        </div>
+        <button id="swap" class="link" type="button" hidden>Swap LCL ↔ UTC</button>
+      </section>
 
-    <section id="result" hidden aria-label="Result">
-      <div class="result-head">
-        <h2 id="summary"></h2>
-        <p class="note">Times below are UTC, as they'll go into LogTen.</p>
-      </div>
+      <p id="error" class="error" role="alert" hidden></p>
 
-      <div class="legs" id="legs"></div>
+      <section id="result" hidden aria-label="Result">
+        <div class="result-head">
+          <h2 id="summary"></h2>
+          <p class="note">Times below are UTC, as they'll go into LogTen.</p>
+        </div>
 
-      <div class="actions">
-        <div class="action">
-          <div>
-            <p class="action-title">Calendar</p>
-            <p class="action-file" id="icsName"></p>
+        <div class="legs" id="legs"></div>
+
+        <div class="actions">
+          <div class="action">
+            <div>
+              <p class="action-title">Calendar</p>
+              <p class="action-file" id="icsName"></p>
+              <p class="action-hint" id="pCalHint" role="status" hidden></p>
+            </div>
+            <div class="btns">
+              <button class="primary" id="shareIcs" type="button">Add to Calendar</button>
+              <button class="ghost" id="dlIcs" type="button">Download</button>
+            </div>
           </div>
-          <div class="btns">
-            <button class="primary" id="shareIcs" type="button">Add to Calendar</button>
-            <button class="ghost" id="dlIcs" type="button">Download</button>
+          <div class="action">
+            <div>
+              <p class="action-title">LogTen Pro</p>
+              <p class="action-file" id="csvName"></p>
+            </div>
+            <div class="btns">
+              <button class="primary" id="shareCsv" type="button">Share CSV</button>
+              <button class="ghost" id="dlCsv" type="button">Download</button>
+            </div>
           </div>
         </div>
-        <div class="action">
-          <div>
-            <p class="action-title">LogTen Pro</p>
-            <p class="action-file" id="csvName"></p>
-          </div>
-          <div class="btns">
-            <button class="primary" id="shareCsv" type="button">Share CSV</button>
-            <button class="ghost" id="dlCsv" type="button">Download</button>
+      </section>
+
+      <footer>
+        <p>Flights without an airline prefix are treated as Atlas Air (5Y). Deadheads are marked “*” in Calendar and as Positioning in LogTen.</p>
+      </footer>
+    </div>
+
+    <!-- ============================================================ booking email -->
+    <div id="modeEmail" role="tabpanel" aria-labelledby="tabEmail" hidden>
+      <h1>Booking email in.<br>Calendar event out.</h1>
+      <p class="lede">Put the category (<b>DH</b>, <b>Trng DH</b>, <b>Alt DH</b>, <b>GW</b>, <b>Alt GW</b>) on line one, then paste the confirmation. Nothing leaves your phone.</p>
+
+      <section class="input" aria-label="Email text">
+        <textarea id="email" rows="10" spellcheck="false" autocapitalize="off" autocomplete="off"
+          placeholder="Trng DH&#10;Airline Booking Ref: GTQGRX&#10;Flight: AS 499&#10;Origin: Portland (PDX)&#10;Departing: Monday 02 November 2026 at 6:08AM&#10;…"></textarea>
+        <div class="input-btns">
+          <button class="primary" id="paste" type="button">Paste</button>
+          <label class="cat">
+            <span>Category</span>
+            <select id="category">
+              <option value="">From line one</option>
+              <option value="-">None</option>
+              <option>DH</option>
+              <option>Trng DH</option>
+              <option>Alt DH</option>
+              <option>GW</option>
+              <option>Alt GW</option>
+            </select>
+          </label>
+          <button class="ghost" id="clear" type="button">Clear</button>
+        </div>
+      </section>
+
+      <p id="eError" class="error" role="alert" hidden></p>
+
+      <section id="zones" class="zones" hidden aria-label="Unknown airports">
+        <p class="note">These airports aren’t in the built-in list. Pick their time zone:</p>
+        <div id="zoneList"></div>
+      </section>
+
+      <section id="eResult" hidden aria-label="Result">
+        <div class="result-head">
+          <h2 id="eSummary"></h2>
+          <p class="note">Local times as in the email · UTC underneath.</p>
+        </div>
+
+        <div class="legs" id="eLegs"></div>
+        <ul class="warnings" id="warnings" hidden></ul>
+
+        <div class="actions">
+          <div class="action">
+            <div>
+              <p class="action-title">Calendar · <span id="calName">Work</span></p>
+              <p class="action-file">Choose this calendar if Calendar asks</p>
+              <p class="action-file" id="eIcsName"></p>
+              <p class="action-hint" id="eCalHint" role="status" hidden></p>
+            </div>
+            <div class="btns">
+              <button class="primary" id="eShareIcs" type="button">Add to Calendar</button>
+              <button class="ghost" id="eDlIcs" type="button">Download</button>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <footer>
-      <p>Flights without an airline prefix are treated as Atlas Air (5Y). Deadheads are marked “*” in Calendar and as Positioning in LogTen.</p>
-    </footer>
+      <footer>
+        <p>GW and Alt GW flights go in the <b>Home</b> calendar, everything else in <b>Work</b>. Categorised flights get a “*” in the title and the category after the UTC times. Events share their IDs with pairing events, so a booking for a deadhead that’s already on your calendar updates it.</p>
+      </footer>
+    </div>
   </main>
 
   <script type="module" src="app.js"></script>

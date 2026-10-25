@@ -1,7 +1,9 @@
 // Pairing Converter — core logic (no DOM, no pdf.js). Shared by the app and the Node tests.
 //
 // Pipeline:  pdf.js text items  →  rows (by y)  →  legs (by header x-columns)
-//            LCL legs + UTC legs →  merged legs  →  LogTen Pro CSV  /  iCal ICS
+//            LCL legs + UTC legs →  merged legs  →  LogTen Pro CSV  /  iCal ICS (via ics.js)
+
+import { toCalendar, eventUid } from './ics.js';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const DAY = 1440; // minutes
@@ -239,58 +241,12 @@ export function eventFields(leg) {
   };
 }
 
-function icsStamp(min) {
-  const d = ymd(min);
-  return `${d.y}${pad(d.m)}${pad(d.d)}T${hm(min, false)}00Z`;
-}
-function icsNow(now = new Date()) {
-  return now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-}
-function icsText(s) {
-  return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
-}
-function fold(line) {
-  // RFC 5545: max 75 octets per line, continuation lines start with a space
-  const enc = new TextEncoder();
-  const out = [];
-  let cur = '', limit = 75;
-  for (const ch of line) {
-    if (enc.encode(cur + ch).length > limit) { out.push(cur); cur = ' ' + ch; limit = 75; }
-    else cur += ch;
-  }
-  out.push(cur);
-  return out.join('\r\n');
-}
-
 export function toICS(legs, { now = new Date(), calName = 'Work' } = {}) {
-  const stamp = icsNow(now);
-  const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//Pairing Converter//EN',
-    'CALSCALE:GREGORIAN',
-    'METHOD:PUBLISH',
-    `X-WR-CALNAME:${icsText(calName)}`,
-  ];
-  for (const leg of legs) {
+  const ms = min => min * 60000;
+  return toCalendar(legs.map(leg => {
     const f = eventFields(leg);
-    // Stable UID: re-importing an updated pairing replaces events instead of duplicating them
-    const uid = `${icsStamp(leg.utc.std).slice(0, 8)}-${leg.flight}-${leg.dep}${leg.arr}@pairing-converter`;
-    lines.push(
-      'BEGIN:VEVENT',
-      `UID:${uid}`,
-      `DTSTAMP:${stamp}`,
-      `DTSTART:${icsStamp(f.start)}`,
-      `DTEND:${icsStamp(f.end)}`,
-      `SUMMARY:${icsText(f.summary)}`,
-      `DESCRIPTION:${icsText(f.description)}`,
-      `LOCATION:${icsText(f.location)}`,
-      'TRANSP:OPAQUE',
-      'END:VEVENT',
-    );
-  }
-  lines.push('END:VCALENDAR');
-  return lines.map(fold).join('\r\n') + '\r\n';
+    return { ...f, uid: eventUid(ms(leg.utc.std), leg.flight, leg.dep, leg.arr), start: ms(f.start), end: ms(f.end) };
+  }), { now, calName });
 }
 
 // ---------------------------------------------------------------- file names

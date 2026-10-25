@@ -1,6 +1,8 @@
 import './polyfills.js'; // must come first (Safari)
 import * as pdfjs from './vendor/pdf.min.mjs';
 import { groupRows, convert, detectKind } from './core.js';
+import { addToCalendar, share, download } from './files.js';
+import './email-ui.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./pdf-worker.js', import.meta.url).href;
 
@@ -67,6 +69,7 @@ async function readRows(file) {
 async function update() {
   renderSlots();
   showError('');
+  $('pCalHint').hidden = true;
   $('result').hidden = true;
   output = null;
   if (!files.LCL || !files.UTC) return;
@@ -135,41 +138,15 @@ function makeFile(kind) {
   return new File([output.csv], output.names.csv, { type: 'text/csv' });
 }
 
-async function share(kind) {
+$('shareIcs').addEventListener('click', async () => {
   if (!output) return;
-  const file = makeFile(kind);
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: file.name }); return; }
-    catch (err) { if (err.name === 'AbortError') return; }
-  }
-  if (kind === 'ics') {
-    // Opening a calendar file directly makes iOS/macOS offer "Add All" to Calendar
-    location.href = URL.createObjectURL(file);
-    return;
-  }
-  download(kind);
-}
-
-function download(kind) {
-  if (!output) return;
-  const file = makeFile(kind);
-  const url = URL.createObjectURL(file);
-  const a = Object.assign(document.createElement('a'), { href: url, download: file.name });
-  document.body.append(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
-}
-
-$('shareIcs').addEventListener('click', () => {
-  // On iPhone, opening the .ics adds it straight to Calendar; elsewhere use the share sheet
-  const ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (ios && output) { location.href = URL.createObjectURL(makeFile('ics')); return; }
-  share('ics');
+  const note = await addToCalendar(makeFile('ics'));
+  $('pCalHint').textContent = note;
+  $('pCalHint').hidden = !note;
 });
-$('shareCsv').addEventListener('click', () => share('csv'));
-$('dlIcs').addEventListener('click', () => download('ics'));
-$('dlCsv').addEventListener('click', () => download('csv'));
+$('shareCsv').addEventListener('click', () => output && share(makeFile('csv')));
+$('dlIcs').addEventListener('click', () => output && download(makeFile('ics')));
+$('dlCsv').addEventListener('click', () => output && download(makeFile('csv')));
 
 if (!(navigator.canShare)) $('shareCsv').textContent = 'Save CSV';
 
@@ -189,6 +166,22 @@ if (!(navigator.canShare)) $('shareCsv').textContent = 'Save CSV';
   history.replaceState(null, '', location.pathname);
   update();
 })();
+
+// ---------------------------------------------------------------- Pairing PDFs / Booking email switch
+
+const MODE_KEY = 'pairing-converter.mode';
+function showMode(mode) {
+  for (const [m, tab, panel] of [['pairing', 'tabPairing', 'modePairing'], ['email', 'tabEmail', 'modeEmail']]) {
+    $(tab).setAttribute('aria-selected', String(m === mode));
+    $(panel).hidden = m !== mode;
+  }
+  try { localStorage.setItem(MODE_KEY, mode); } catch { /* private mode */ }
+}
+$('tabPairing').addEventListener('click', () => showMode('pairing'));
+$('tabEmail').addEventListener('click', () => showMode('email'));
+let savedMode = null;
+try { savedMode = localStorage.getItem(MODE_KEY); } catch { /* private mode */ }
+if (savedMode === 'email' && !new URLSearchParams(location.search).has('shared')) showMode('email');
 
 // ---------------------------------------------------------------- offline
 

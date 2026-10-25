@@ -49,6 +49,37 @@ main { max-width: 640px; margin: 0 auto; padding: 28px 16px 40px; }
 h1 { font-size: clamp(26px, 7vw, 34px); line-height: 1.12; margin: 0 0 10px; letter-spacing: -.01em; }
 .lede { color: var(--muted); margin: 0 0 24px; }
 
+/* ---------- Pairing PDFs / Booking email switch */
+.modes {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0 0 22px; padding: 4px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+}
+.modes button {
+  min-height: 40px; border: 0; border-radius: 9px; background: transparent; color: var(--muted);
+  font: 600 15px var(--sans); cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.modes button[aria-selected=true] { background: var(--ink); color: var(--bg); }
+
+/* ---------- booking email */
+textarea {
+  display: block; width: 100%; min-height: 220px; resize: vertical;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px;
+  font: 16px/1.45 var(--mono);  /* 16px keeps iOS from zooming in on focus */
+}
+textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.input-btns { display: flex; gap: 8px; margin-top: 10px; align-items: end; }
+.cat { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.cat span { font: 600 10px/1.4 var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+select {
+  min-height: 44px; width: 100%; border-radius: 11px; padding: 0 10px;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line); font: 16px var(--sans);
+}
+.zones { margin-top: 18px; }
+.zone { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 12px; margin-top: 8px; }
+.zone b { font: 700 15px var(--mono); }
+.warnings { margin: 12px 0 0; padding-left: 18px; color: var(--muted); font-size: 14px; }
+
 /* ---------- file picking */
 input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
 .pick-all {
@@ -81,7 +112,7 @@ input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; poin
 }
 
 /* ---------- result */
-#result { margin-top: 28px; }
+#result, #eResult { margin-top: 28px; }
 .result-head h2 { font-size: 20px; margin: 0; }
 .note { color: var(--muted); font-size: 14px; margin: 4px 0 14px; }
 
@@ -105,6 +136,8 @@ input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; poin
 }
 .leg-times span { display: block; font: 600 10px/1.4 var(--sans); text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .leg-times .empty { color: var(--muted); }
+.leg-times.three { grid-template-columns: repeat(3, 1fr); }
+.leg-times small { display: block; color: var(--muted); font-size: 12px; }
 
 .actions { display: grid; gap: 10px; margin-top: 18px; }
 .action {
@@ -113,8 +146,10 @@ input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; poin
 }
 .action-title { margin: 0; font-weight: 650; }
 .action-file { margin: 2px 0 0; color: var(--muted); font: 13px var(--mono); word-break: break-all; }
+.action-hint { margin: 6px 0 0; color: var(--ok); font-size: 14px; }
 .btns { display: flex; gap: 8px; }
 button.primary, button.ghost {
+button:disabled { opacity: .45; cursor: default; }
   min-height: 44px; padding: 0 16px; border-radius: 11px; font: 600 15px var(--sans); cursor: pointer;
 }
 button.primary { background: var(--accent); color: var(--accent-ink); border: 0; }
