@@ -1,5 +1,5 @@
 // Offline cache for the app shell. Bump VERSION whenever app files change.
-const VERSION = 'pairing-converter-v3';
+const VERSION = 'pairing-converter-v4';
 const SHELL = [
   './',
   './index.html',
