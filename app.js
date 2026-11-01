@@ -1,7 +1,7 @@
 import './polyfills.js'; // must come first (Safari)
 import * as pdfjs from './vendor/pdf.min.mjs';
 import { groupRows, convert, detectKind } from './core.js';
-import { addToCalendar, share, download } from './files.js';
+import { addToCalendar, share, download, ios } from './files.js';
 import './email-ui.js';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./pdf-worker.js', import.meta.url).href;
@@ -70,6 +70,7 @@ async function update() {
   renderSlots();
   showError('');
   $('pCalHint').hidden = true;
+  $('ltHint').hidden = true;
   $('result').hidden = true;
   output = null;
   if (!files.LCL || !files.UTC) return;
@@ -149,6 +150,33 @@ $('dlIcs').addEventListener('click', () => output && download(makeFile('ics')));
 $('dlCsv').addEventListener('click', () => output && download(makeFile('csv')));
 
 if (!(navigator.canShare)) $('shareCsv').textContent = 'Save CSV';
+
+// ---------------------------------------------------------------- LogTen Pro direct
+
+// LogTen Pro is Mac / iPhone / iPad only. When the button shows, it becomes the main action.
+const apple = ios || /Macintosh|Mac OS X/.test(navigator.userAgent);
+if (apple) {
+  $('openLogTen').hidden = false;
+  $('shareCsv').className = 'ghost';
+}
+
+$('openLogTen').addEventListener('click', () => {
+  if (!output) return;
+  $('ltHint').hidden = true;
+  let left = false;
+  const onHide = () => { if (document.visibilityState === 'hidden') left = true; };
+  document.addEventListener('visibilitychange', onHide);
+  window.addEventListener('blur', onHide, { once: true });
+  location.href = output.logten;
+  // If nothing took over the screen, LogTen Pro probably isn't installed on this device
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onHide);
+    if (!left && document.hasFocus()) {
+      $('ltHint').textContent = "If LogTen Pro didn't open, check it's installed here, or use the CSV instead.";
+      $('ltHint').hidden = false;
+    }
+  }, 2500);
+});
 
 // ---------------------------------------------------------------- shared from another app (Android)
 

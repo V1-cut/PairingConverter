@@ -218,6 +218,63 @@ function csvCell(v) {
   return /[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
+// ---------------------------------------------------------------- LogTen Pro direct (API v2, UTC)
+//
+// Same flights as the CSV, sent straight to LogTen Pro (Mac / iPhone / iPad) through its
+// documented URL scheme: logten://v2/addEntities?package=<JSON>
+// https://github.com/Coradine/logten-api — LogTen asks before adding anything.
+
+const LT_DATE = 'MM/dd/yyyy', LT_DATETIME = 'MM/dd/yyyy HH:mm';
+
+function ltDate(min) {
+  const d = ymd(min);
+  return `${pad(d.m)}/${pad(d.d)}/${d.y}`;
+}
+const ltDateTime = min => `${ltDate(min)} ${hm(min)}`;
+
+/** Stable per-flight key: re-sending a revised pairing updates these flights instead of duplicating them. */
+export function logTenKey(leg) {
+  const d = ymd(leg.utc.std);
+  return `PairingConverter-${d.y}${pad(d.m)}${pad(d.d)}-${leg.flight}-${leg.dep}-${leg.arr}`;
+}
+
+export function logTenEntities(legs) {
+  return legs.map(leg => {
+    const t = leg.utc;
+    const f = {
+      entity_name: 'Flight',
+      flight_key: logTenKey(leg),
+      flight_flightDate: ltDate(leg.dutyStartUtc), // same date rule as the CSV
+      flight_flightNumber: leg.flight,
+      flight_from: leg.dep,
+      flight_to: leg.arr,
+      flight_type: leg.dh ? 1 : 0, // 0 = Flight (Line Ops), 1 = Positioning
+      flight_scheduledDepartureTime: ltDateTime(t.std),
+      flight_scheduledArrivalTime: ltDateTime(t.sta),
+      flight_selectedCrewSIC: 'Self',
+    };
+    if (t.on != null) f.flight_onDutyTime = ltDateTime(t.on);
+    if (t.off != null) f.flight_offDutyTime = ltDateTime(t.off);
+    return f;
+  });
+}
+
+export function toLogTenURL(legs, { version = '1.0' } = {}) {
+  const pkg = {
+    metadata: {
+      application: 'Pairing Converter',
+      version,
+      serviceID: 'io.github.v1-cut.pairingconverter',
+      dateFormat: LT_DATE,
+      dateAndTimeFormat: LT_DATETIME,
+      timesAreZulu: true,
+      shouldApplyAutoFillTimes: true,
+    },
+    entities: logTenEntities(legs),
+  };
+  return 'logten://v2/addEntities?package=' + encodeURIComponent(JSON.stringify(pkg));
+}
+
 // ---------------------------------------------------------------- ICS (Apple Calendar)
 
 export function eventFields(leg) {
@@ -276,5 +333,5 @@ export function convert({ lclRows, utcRows, lclName = '', utcName = '', now }) {
   if (!lcl.length || !utc.length) throw new Error('No flights found. Is this a pairing PDF?');
   const legs = mergeLegs(lcl, utc);
   const tag = periodTag([lclName, utcName], legs);
-  return { legs, csv: toCSV(legs), ics: toICS(legs, { now }), names: outputNames(tag) };
+  return { legs, csv: toCSV(legs), ics: toICS(legs, { now }), logten: toLogTenURL(legs), names: outputNames(tag) };
 }

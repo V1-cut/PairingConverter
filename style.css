@@ -147,7 +147,7 @@ input[type=file] { position: absolute; opacity: 0; width: 1px; height: 1px; poin
 .action-title { margin: 0; font-weight: 650; }
 .action-file { margin: 2px 0 0; color: var(--muted); font: 13px var(--mono); word-break: break-all; }
 .action-hint { margin: 6px 0 0; color: var(--ok); font-size: 14px; }
-.btns { display: flex; gap: 8px; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
 button.primary, button.ghost {
 button:disabled { opacity: .45; cursor: default; }
   min-height: 44px; padding: 0 16px; border-radius: 11px; font: 600 15px var(--sans); cursor: pointer;
@@ -160,4 +160,10 @@ footer { margin-top: 32px; color: var(--muted); font-size: 13px; }
 @media (max-width: 380px) {
   .btns { width: 100%; }
   .btns button { flex: 1; }
+}
+/* With three LogTen buttons on a phone, "Send to LogTen" gets its own full-width row */
+@media (max-width: 560px) {
+  .btns:has(#openLogTen:not([hidden])) { width: 100%; }
+  .btns:has(#openLogTen:not([hidden])) button { flex: 1; }
+  #openLogTen:not([hidden]) { flex-basis: 100%; }
 }
